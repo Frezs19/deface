@@ -14,6 +14,18 @@ import cv2
 from deface import __version__
 from deface.centerface import CenterFace
 
+def remove_unanonymized_images(folder):
+    if os.path.exists(folder):
+
+        files = os.listdir(folder)
+
+        for file in files:
+            # If we modify the name added at the blur output, we will also have to modify the name here
+            if file.lower().endswith(('.png', '.jpg', '.jpeg')) and "anonymized" not in file.lower():
+                file_path = os.path.join(folder, file)
+                os.remove(file_path)
+
+
 def scale_bb(x1, y1, x2, y2, mask_scale=1.0):
     s = mask_scale - 1.0
     h, w = y2 - y1, x2 - x1
@@ -306,6 +318,8 @@ def parse_cli_args():
     parser.add_argument(
         '--version', action='version', version=__version__,
         help='Print version number and exit.')
+    parser.add_argument(
+        '--remove-original-images', '-rm', default=False, help='Boolean for removing original images so it doesn\'t keep unanonymized images. Default: False')
     parser.add_argument('--help', '-h', action='help', help='Show this help message and exit.')
 
     args = parser.parse_args()
@@ -348,6 +362,7 @@ def main():
     backend = args.backend
     in_shape = args.scale
     mosaicsize = args.mosaicsize
+    remove_original_images = args.remove_original_images
     replaceimg = None
     if in_shape is not None:
         w, h = in_shape.split('x')
@@ -415,6 +430,9 @@ def main():
             print(f'File {ipath} not found. Skipping...')
         else:
             print(f'File {ipath} has an unknown type {filetype}. Skipping...')
+    # Function call to delete input images (unblurred ones)
+    if remove_original_images:
+        remove_unanonymized_images(args.input[0])
 
 
 if __name__ == '__main__':
